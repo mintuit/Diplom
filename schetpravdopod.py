@@ -179,7 +179,6 @@ def create_initial0(data: Tree,
     if int(period) == 0 :
         return data.get_initial_states()
     else :
-        print(lineage)
         lineage = np.sort(lineage)
         result = []
         conditional_prob = []
@@ -189,7 +188,6 @@ def create_initial0(data: Tree,
         t_sum1 = 0
         for l in range(data.number_of_populations) :
             t_sum1 += previous_states[l * (data.cur_samples_amount + 1) + lineage[1]]
-        # print(t_sum0, t_sum1)
         for pop in range(data.number_of_populations) :
             conditional_prob.append((previous_states[pop * (data.cur_samples_amount + 1) + lineage[0]]) *
                                     (previous_states[pop * (data.cur_samples_amount + 1) + lineage[1]] / t_sum1) *
@@ -244,14 +242,20 @@ def prop_1(limits_list: np.array, lineage_list: np.array, tree: Tree) :
         create_initial0(tree, period=1, previous_states=np.array(sol_lines_list[-1])[:, -1], lineage=np.array([0, 1])))
     return result
 
+def tree_eq(time: np.array, N: int, k: int):,
+    lam = 1/N,
+    sol = [],
+    for i in range(k, 1, -1):",
+        sol.append(lam  * np.exp(-lam * 0.5 * i * (i-1) * time[k - i]))
+    return np.prod(sol)
 
 def migr_est(migr_mat: np.ndarray, limits_list: np.ndarray, lineage_list: np.ndarray, num_replicates: int) :
     m12 = migr_mat[0]
     m21 = migr_mat[1]
     migration_matrix1 = [[0, m12],
                          [m21, 0]]
-    M12 = m12 / 20000
-    M21 = m21 / 20000
+    M12 = m12 / 10000
+    M21 = m21 / 10000
     migration_matrix2 = [[0, M12],
                          [M21, 0]]
     P1 = np.zeros(num_replicates)
@@ -263,10 +267,10 @@ def migr_est(migr_mat: np.ndarray, limits_list: np.ndarray, lineage_list: np.nda
         lin_time = np.hstack((lean_time2, lean_time+0.00001))
         print(lin_time, lean_time)
         tree_1 = Tree(migration_rates=migration_matrix2, number_of_samples=[3, 3], number_of_populations=2,
-                      coalescence_rates=[1, 1], coalescence_time=1000000, Q=1, N=1000)
-        P1[i] = prop_1(limits_list=lin_time, lineage_list=lineage_list1[i], tree=tree_1)
-        print(i, 'i')
-    D1 = np.sum(np.log10(P1))
+                      coalescence_rates=[1, 1], coalescence_time=1000000, Q=1, N=10000)
+        S = tree_eq(time = limits_list, N = 10000, k = 6)
+        P1[i] = prop_1(limits_list=lin_time, lineage_list=lineage_list1[i], tree=tree_1) / (S * num_replicates)
+    D1 = np.log10(np.sum(P1))
     return (- D1)
 
 
@@ -277,7 +281,6 @@ def count_lines(filename, chunk_size=1 << 13) :
 
 
 lenenen = count_lines('masco.txt')
-print('a')
 
 with open("masco.txt") as file :
     lines = file.readlines()
@@ -292,16 +295,20 @@ for i in range(lenenen) :
     l2 = json.loads(lin[1])
     linlist.append(l1)
     timelist.append(l2)
-print('b')
 
 
-def migr_est1(migr_coef: np.ndarray) :
-    return migr_est(migr_mat=migr_coef, limits_list=timelist[: :100], lineage_list=linlist[: :100],
+x = np.linspace(0.01, 2, num=10)
+Q = np.empty([10, 10])
+for i in range(10):
+    for j in range(10):
+        x0 = np.array([x[i], x[j]], dtype=np.double)
+        print(x0)
+        Q[i, j] = migr_est(migr_mat = x0, 
+                    limits_list=np.array(timelist[: :100]), 
+                    lineage_list=np.array(linlist[: :100]),
                     num_replicates=lenenen // 100)
-
-
-x0 = np.array([0.5, 0.5])
-res = minimize(migr_est1, x0, method='BFGS', options={'disp' : True})
-my_file = open('migr.txt', 'w')
-my_file.write(str(res.x) + '\n')
+        
+    
+my_file = open('migr1.txt', 'w')
+my_file.write(str(Q) + '\n')
 my_file.close()
