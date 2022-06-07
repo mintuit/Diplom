@@ -12,3 +12,5 @@ As a result in this situation we get such Heatmap:
 <img width="282" alt="image" src="https://user-images.githubusercontent.com/82202781/172449998-122e2cdb-6bab-4904-9276-88ed3479a403.png">
 
 Here we can see a square in the centre of the picture, that signals us that the Likelihood is maximum with migration rates about 0.8-1.1.
+
+Thi heatmap is nor quite clear because of computantial problems.
